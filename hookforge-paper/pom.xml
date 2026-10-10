@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion><parent><groupId>dev.hookforge</groupId><artifactId>hookforge-parent</artifactId><version>0.1.0</version></parent>
+  <artifactId>hookforge-paper</artifactId><name>HookForge Paper Plugin</name>
+  <dependencies>
+    <dependency><groupId>dev.hookforge</groupId><artifactId>hookforge-api</artifactId></dependency>
+    <dependency><groupId>dev.hookforge</groupId><artifactId>hookforge-core</artifactId></dependency>
+    <dependency><groupId>dev.hookforge</groupId><artifactId>adapter-vault</artifactId></dependency>
+    <dependency><groupId>dev.hookforge</groupId><artifactId>adapter-placeholderapi</artifactId></dependency>
+    <dependency><groupId>dev.hookforge</groupId><artifactId>adapter-bukkit-permissions</artifactId></dependency>
+    <dependency><groupId>io.papermc.paper</groupId><artifactId>paper-api</artifactId><scope>provided</scope></dependency>
+  </dependencies>
+  <build><finalName>HookForge-${project.version}</finalName><plugins>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-shade-plugin</artifactId><version>3.6.0</version><executions><execution><phase>package</phase><goals><goal>shade</goal></goals><configuration><createDependencyReducedPom>false</createDependencyReducedPom><minimizeJar>false</minimizeJar><artifactSet><includes><include>dev.hookforge:hookforge-api</include><include>dev.hookforge:hookforge-core</include><include>dev.hookforge:adapter-vault</include><include>dev.hookforge:adapter-placeholderapi</include><include>dev.hookforge:adapter-bukkit-permissions</include></includes></artifactSet></configuration></execution></executions></plugin>
+  </plugins></build>
+</project>

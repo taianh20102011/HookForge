@@ -1,0 +1,18 @@
+# HookForge Advanced preset
+# Các lựa chọn rõ ràng để senior kiểm soát adapter và độ chi tiết chẩn đoán.
+language: vi # Preset language; setup keeps your current selection.
+profile: advanced
+integrations:
+  economy:
+    enabled: true
+    provider: auto # auto | vault | none
+  placeholders:
+    enabled: true
+    provider: auto # auto | placeholderapi | none
+  permissions:
+    enabled: true
+diagnostics:
+  level: debug # info | normal | debug
+  compatibility-check: true
+  write-report: true
+  report-file: diagnostics.json

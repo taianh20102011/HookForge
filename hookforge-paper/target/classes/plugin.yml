@@ -1,0 +1,16 @@
+name: HookForge
+version: 0.1.0
+main: dev.hookforge.paper.HookForgePlugin
+author: HookForge contributors
+description: A beginner-friendly, extensible API toolkit for Paper plugins.
+api-version: '1.21'
+softdepend: [Vault, PlaceholderAPI, LuckPerms]
+commands:
+  hookforge:
+    description: HookForge setup, diagnostics and API tools.
+    usage: /hookforge <help|setup|doctor|explain|test|reload|language>
+    permission: hookforge.admin
+permissions:
+  hookforge.admin:
+    description: Allows access to HookForge administrative tools.
+    default: op

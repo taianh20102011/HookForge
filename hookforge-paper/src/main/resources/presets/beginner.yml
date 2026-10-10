@@ -1,0 +1,18 @@
+# HookForge Beginner preset
+# Bật chức năng cần dùng; HookForge tự phát hiện integration tùy chọn.
+language: vi # Preset language; setup keeps your current selection.
+profile: beginner
+integrations:
+  economy:
+    enabled: true
+    provider: auto
+  placeholders:
+    enabled: true
+    provider: auto
+  permissions:
+    enabled: true
+diagnostics:
+  level: normal
+  compatibility-check: true
+  write-report: true
+  report-file: diagnostics.json

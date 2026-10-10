@@ -1,0 +1,23 @@
+# HookForge — cấu hình mặc định dễ dùng.
+# Gợi ý: /hookforge explain <tên.khóa> để đọc giải thích ngay trong game.
+language: vi # vi = Tiếng Việt | en = English | cn = 简体中文
+profile: beginner
+
+integrations:
+  economy:
+    enabled: true
+    # auto = dùng Vault nếu có provider; vault = yêu cầu Vault; none = tắt bridge.
+    provider: auto
+  placeholders:
+    enabled: true
+    # auto = tự nhận biết PlaceholderAPI; placeholderapi = yêu cầu PAPI; none = tắt bridge.
+    provider: auto
+  permissions:
+    enabled: true
+
+
+diagnostics:
+  level: normal # info | normal | debug
+  compatibility-check: true
+  write-report: true
+  report-file: diagnostics.json

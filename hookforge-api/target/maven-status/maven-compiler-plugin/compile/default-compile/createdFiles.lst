@@ -1,0 +1,8 @@
+dev\hookforge\api\diagnostic\Diagnostic.class
+dev\hookforge\api\HookForgeAPI.class
+dev\hookforge\api\diagnostic\Diagnostic$Severity.class
+dev\hookforge\api\result\HookResult.class
+dev\hookforge\api\placeholder\PlaceholderService.class
+dev\hookforge\api\economy\EconomyService.class
+dev\hookforge\api\config\ConfigExplanation.class
+dev\hookforge\api\permission\PermissionService.class

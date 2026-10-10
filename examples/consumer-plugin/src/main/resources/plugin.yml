@@ -1,0 +1,9 @@
+name: HookForgeConsumerExample
+version: 1.0.0
+main: me.example.consumer.HookForgeConsumerExample
+depend: [HookForge]
+api-version: '1.21'
+commands:
+  hfdemo:
+    description: Demonstrates HookForge API from another plugin.
+    usage: /hfdemo
