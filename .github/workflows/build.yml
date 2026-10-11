@@ -1,66 +1,124 @@
-name: Build HookForge and Release
+name: Build HookForge and all plugins
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*' # Chạy tự động và tạo Release khi bạn push tag dạng v1.0, v1.0.0,...
-  workflow_dispatch: # Cho phép bấm nút "Run workflow" thủ công trên GitHub UI
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
 
 permissions:
-  contents: write # Cấp quyền tạo Release và upload tài nguyên lên repo
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Lấy nguồn mã nguồn từ repository
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      # Step 2: Thiết lập môi trường Node.js (phù hợp với dự án JavaScript / Node.js)
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Java 21 and Maven cache
+        uses: actions/setup-java@v4
         with:
-          node-version: '20'
-          cache: 'npm' # Giúp tăng tốc lần build sau bằng cách cache node_modules
+          distribution: temurin
+          java-version: '21'
+          cache: maven
 
-      # Step 3: Cài đặt các thư viện phụ thuộc (Dependencies)
-      - name: Install dependencies
-        run: npm install
-
-      # Step 4: Chạy lệnh Build (nếu dự án của bạn có bước build, ví dụ: tsc, webpack, esbuild,...)
-      # Nếu dự án không cần compile, bước này có thể bỏ qua hoặc giữ nguyên nếu package.json có script build
-      - name: Build project
-        run: npm run build --if-present
-
-      # Step 5: Đóng gói các file sản phẩm thành file .zip
-      - name: Package build artifacts
+      - name: Locate HookForge project
+        shell: bash
         run: |
-          zip -r hookforge-release.zip . -x "node_modules/*" ".git/*" ".github/*"
+          set -euo pipefail
+          if [[ -f "pom.xml" && -f "hookforge-paper/pom.xml" ]]; then
+            root="."
+          elif [[ -f "HookForge/pom.xml" && -f "HookForge/hookforge-paper/pom.xml" ]]; then
+            root="HookForge"
+          else
+            echo "ERROR: Could not find HookForge's root pom.xml and hookforge-paper/pom.xml." >&2
+            echo "Repository root:" >&2
+            ls -la >&2
+            exit 1
+          fi
+          echo "HOOKFORGE_ROOT=$root" >> "$GITHUB_ENV"
+          echo "Located HookForge at: $root"
 
-      # Step 6: Tải file Zip lên phần Artifacts của Workflow Run (xem được ở trang tóm tắt build)
-      - name: Upload Build Artifact
+      - name: Build and install all HookForge Maven modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn --batch-mode --no-transfer-progress -U \
+            -f "$HOOKFORGE_ROOT/pom.xml" clean install
+
+      - name: Collect HookForge Paper plugin JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          out="build-output/HookForge"
+          mkdir -p "$out"
+          jars=("$HOOKFORGE_ROOT"/hookforge-paper/target/*.jar)
+          copied=0
+          for jar in "${jars[@]}"; do
+            filename="${jar##*/}"
+            [[ "$filename" == original-*.jar || "$filename" == *-sources.jar || "$filename" == *-javadoc.jar ]] && continue
+            cp "$jar" "$out/$filename"
+            copied=$((copied + 1))
+          done
+          if (( copied == 0 )); then
+            echo "ERROR: HookForge built without producing a JAR in hookforge-paper/target." >&2
+            exit 1
+          fi
+          ls -lah "$out"
+
+      - name: Build every independent plugin under plugins/<PluginName>
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          plugin_poms=("$HOOKFORGE_ROOT"/plugins/*/pom.xml)
+          if (( ${#plugin_poms[@]} == 0 )); then
+            echo "No independent plugins found under $HOOKFORGE_ROOT/plugins/<PluginName>/. HookForge itself was built above."
+          fi
+          for pom in "${plugin_poms[@]}"; do
+            dir="${pom%/pom.xml}"
+            name="${dir##*/}"
+            echo "Building plugin: $name ($pom)"
+            mvn --batch-mode --no-transfer-progress -U -f "$pom" clean package
+
+            out="build-output/$name"
+            mkdir -p "$out"
+            jars=("$dir"/target/*.jar)
+            copied=0
+            for jar in "${jars[@]}"; do
+              filename="${jar##*/}"
+              [[ "$filename" == original-*.jar || "$filename" == *-sources.jar || "$filename" == *-javadoc.jar ]] && continue
+              cp "$jar" "$out/$filename"
+              copied=$((copied + 1))
+            done
+            if (( copied == 0 )); then
+              echo "ERROR: $name did not produce a distributable JAR." >&2
+              exit 1
+            fi
+          done
+
+      - name: Upload JARs as a GitHub Actions artifact
         uses: actions/upload-artifact@v4
         with:
-          name: hookforge-build
-          path: hookforge-release.zip
+          name: minecraft-plugin-jars-${{ github.run_number }}
+          path: build-output/
+          if-no-files-found: error
+          retention-days: 30
 
-      # Step 7: Tự động tạo GitHub Release & đính kèm file (chỉ chạy khi bạn push tag v*)
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: hookforge-release.zip
-          name: Release ${{ github.ref_name }}
-          body: |
-            ## HookForge Release ${{ github.ref_name }}
-            
-            - Tự động đóng gói và phát hành bởi GitHub Actions.
-            - Tải file `hookforge-release.zip` bên dưới để sử dụng.
-          draft: false
-          prerelease: false
+      - name: Attach JARs to the GitHub Release
+        if: github.event_name == 'release'
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mapfile -t jars < <(find build-output -type f -name '*.jar' -print)
+          if (( ${#jars[@]} == 0 )); then
+            echo "No JAR files found to attach to release." >&2
+            exit 1
+          fi
+          gh release upload "$GITHUB_REF_NAME" "${jars[@]}" --clobber
